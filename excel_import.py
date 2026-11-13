@@ -349,7 +349,8 @@ def importar_seguimiento(xlsx: Path, log=print) -> dict:
             por_hoja[hoja].append({"serial": serial, "serial_aviso": aviso, "serial_sugerido": sug,
                                    "descripcion": g("descripcion"), "costo": parse_numero(g("costo")),
                                    "_status": _norm_status(g("status"))})
-    stats = {"hojas": 0, "items": 0, "con_status": 0}
+    wb.close()   # read_only deja el archivo abierto; cerrarlo permite borrar la copia temporal
+    stats ={"hojas": 0, "items": 0, "con_status": 0}
     with db.conectar() as con:
         for hoja, filas in por_hoja.items():
             db.cargar_hoja(con, hoja, filas)

@@ -27,10 +27,17 @@ import matching
 from parsing import parse_numero, validar_serial
 
 SESION = config.BASE / "datos" / "sesion.json"
+CFG_LOCAL = config.BASE / "web_config.json"               # tus URLs reales: NO va al repositorio
+CFG_PLANTILLA = config.BASE / "web_config.plantilla.json"
 
 
 def cargar_cfg(ruta) -> dict:
-    texto = Path(ruta).read_text(encoding="utf-8")
+    ruta = Path(ruta)
+    if ruta == CFG_LOCAL and not ruta.exists():
+        ruta.write_text(CFG_PLANTILLA.read_text(encoding="utf-8"), encoding="utf-8")
+        raise SystemExit(f"Se creó {ruta.name} a partir de la plantilla. "
+                         "Edítalo con las URLs y selectores de tu página y vuelve a correr el comando.")
+    texto = ruta.read_text(encoding="utf-8")
     texto = texto.replace("{carpeta}", config.BASE.as_uri())   # solo para la web simulada de ejemplo
     return json.loads(texto)
 
@@ -55,7 +62,7 @@ def login(cfg):
         SESION.parent.mkdir(parents=True, exist_ok=True)
         ctx.storage_state(path=str(SESION))
         nav.close()
-    print("Sesión guardada en", SESION)
+    print("Sesión guardada en datos/sesion.json (no la compartas: da acceso a tu cuenta).")
 
 
 # ------------------------------------------------------------------ extraer
@@ -175,7 +182,7 @@ def main(argv=None):
     a = argparse.ArgumentParser()
     a.add_argument("accion", choices=["login", "extraer", "subir"])
     a.add_argument("hoja", nargs="?")
-    a.add_argument("--config", default=str(config.BASE / "web_config.json"))
+    a.add_argument("--config", default=str(CFG_LOCAL))
     a.add_argument("--auto", action="store_true")
     a.add_argument("--limite", type=int)
     a.add_argument("--headless", action="store_true")

@@ -99,6 +99,7 @@ def leer_status_desde_excel(ruta: Path, quien=None) -> int:
     wb = openpyxl.load_workbook(ruta, data_only=True, read_only=True)
     ws = wb["Items"]
     filas = list(ws.iter_rows(values_only=True))
+    wb.close()   # read_only deja el archivo abierto; cerrarlo permite borrar la copia temporal
     enc = list(filas[0]); i_id, i_st, i_no = enc.index("id"), enc.index("status"), enc.index("notas")
     n = 0
     with db.conectar() as con:

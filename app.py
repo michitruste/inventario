@@ -1,12 +1,15 @@
 """
 App para ver, editar y hacer match del inventario.
 Ejecutar:   streamlit run app.py
-Para que otra persona de la red la abra:  streamlit run app.py --server.address 0.0.0.0
-(y entra desde su navegador a http://IP_DE_TU_PC:8501)
+Queda abierta a la red local (.streamlit/config.toml) y pide la clave de
+.streamlit/secrets.toml. Desde otra PC: http://IP_DE_TU_PC:8501 (ver README, sección 6)
 """
 import base64
+import hmac
 import io
+import os
 import tempfile
+from contextlib import contextmanager
 from pathlib import Path
 
 import pandas as pd
@@ -21,6 +24,45 @@ import reportes
 from parsing import parse_descripcion, parse_tabla_pegada
 
 st.set_page_config(page_title="Inventario", page_icon="📦", layout="wide")
+
+
+# ------------------------------------------------------------------ acceso
+def clave_configurada() -> str:
+    """Clave de acceso desde .streamlit/secrets.toml (clave_acceso = "...") o la variable INVENTARIO_CLAVE."""
+    try:
+        clave = st.secrets.get("clave_acceso", "")
+    except Exception:          # no existe secrets.toml
+        clave = ""
+    return str(clave or os.environ.get("INVENTARIO_CLAVE", ""))
+
+
+def solo_local() -> bool:
+    return str(st.get_option("server.address") or "localhost") in ("localhost", "127.0.0.1", "::1")
+
+
+def exigir_acceso():
+    clave = clave_configurada()
+    if not clave:
+        if solo_local():
+            return
+        st.error("La app está abierta a la red sin clave de acceso. Define `clave_acceso` en "
+                 "`.streamlit/secrets.toml` (ver README, sección 6) y vuelve a iniciarla.")
+        st.stop()
+    if st.session_state.get("acceso_ok"):
+        return
+    st.title("📦 Inventario")
+    with st.form("acceso"):
+        intento = st.text_input("Clave de acceso", type="password")
+        entrar = st.form_submit_button("Entrar", type="primary")
+    if entrar:
+        if hmac.compare_digest(intento.encode(), clave.encode()):
+            st.session_state.acceso_ok = True
+            st.rerun()
+        st.error("Clave incorrecta.")
+    st.stop()
+
+
+exigir_acceso()
 db.init()
 
 
@@ -46,13 +88,18 @@ def thumb(nombre):
 
 
 def quien() -> str:
-    return st.session_state.get("usuario") or db.usuario()
+    # No se usa el usuario de Windows de la PC servidor: se mostraría a cualquiera que abra la app.
+    return (st.session_state.get("usuario") or "").strip() or "app"
 
 
-def guardar_upload(archivo) -> Path:
-    tmp = Path(tempfile.mkdtemp()) / archivo.name
-    tmp.write_bytes(archivo.getvalue())
-    return tmp
+@contextmanager
+def archivo_temporal(archivo=None, nombre: str | None = None):
+    """Ruta en una carpeta temporal que se borra al terminar (no deja copias de los Excel en %TEMP%)."""
+    with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as d:
+        ruta = Path(d) / Path(nombre or archivo.name).name
+        if archivo is not None:
+            ruta.write_bytes(archivo.getvalue())
+        yield ruta
 
 
 def txt(v) -> str:
@@ -68,7 +115,7 @@ ICONO = {"alta": "🟢 alta", "confirmado": "✅ confirmado", "media": "🟡 med
 
 # ------------------------------------------------------------------ barra lateral
 st.sidebar.title("📦 Inventario")
-st.sidebar.text_input("Tu nombre (para el historial)", key="usuario", value=db.usuario())
+st.sidebar.text_input("Tu nombre (para el historial)", key="usuario")
 pagina = st.sidebar.radio("Ir a", ["📥 Cargar hoja", "🔎 Revisar ítems", "📚 Catálogo", "📊 Dashboard",
                                     "⚙️ Importar / Exportar"])
 
@@ -344,8 +391,8 @@ def pagina_io():
         st.subheader("Excel de medidas y fotos")
         f = st.file_uploader("Catálogo (.xlsx)", type=["xlsx", "xlsm"], key="up_cat")
         if f and st.button("Importar catálogo"):
-            with st.spinner("Leyendo Excel y extrayendo fotos…"):
-                excel_import.importar_catalogo(guardar_upload(f), log=log.append)
+            with st.spinner("Leyendo Excel y extrayendo fotos…"), archivo_temporal(f) as ruta:
+                excel_import.importar_catalogo(ruta, log=log.append)
                 with db.conectar() as con:
                     log.append(f"Match: {matching.aplicar(con)}")
             st.success("\n\n".join(log))
@@ -353,7 +400,8 @@ def pagina_io():
         st.subheader("Excel de seguimiento (hojas + status)")
         f = st.file_uploader("Seguimiento (.xlsx)", type=["xlsx", "xlsm"], key="up_seg")
         if f and st.button("Importar seguimiento"):
-            excel_import.importar_seguimiento(guardar_upload(f), log=log.append)
+            with archivo_temporal(f) as ruta:
+                excel_import.importar_seguimiento(ruta, log=log.append)
             st.success("\n\n".join(log))
 
     st.divider()
@@ -362,14 +410,17 @@ def pagina_io():
         st.subheader("Exportar a Excel")
         fotos = st.checkbox("Incluir miniaturas de las fotos", value=True)
         if st.button("Generar Excel"):
-            ruta = exportar.exportar(Path(tempfile.mkdtemp()) / "inventario.xlsx", con_fotos=fotos)
-            st.download_button("⬇️ Descargar", ruta.read_bytes(), file_name=ruta.name)
+            with archivo_temporal(nombre="inventario.xlsx") as destino:
+                ruta = exportar.exportar(destino, con_fotos=fotos)
+                contenido = ruta.read_bytes()
+            st.download_button("⬇️ Descargar", contenido, file_name="inventario.xlsx")
     with c2:
         st.subheader("Traer status editados en Excel")
         st.caption("Si alguien trabajó sobre el Excel exportado, súbelo aquí y se pasan sus status.")
         f = st.file_uploader("Excel exportado y editado", type=["xlsx"], key="up_back")
         if f and st.button("Actualizar status"):
-            n = exportar.leer_status_desde_excel(guardar_upload(f), quien())
+            with archivo_temporal(f) as ruta:
+                n = exportar.leer_status_desde_excel(ruta, quien())
             st.success(f"{n} status actualizados.")
 
     st.divider()

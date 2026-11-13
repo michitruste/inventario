@@ -1,0 +1,26 @@
+# Configuración de Streamlit para esta app.
+# Streamlit la lee sola al correr "streamlit run app.py" desde esta carpeta.
+
+[client]
+# "minimal" quita el botón Deploy y el menú de desarrollador de la esquina superior derecha.
+toolbarMode = "minimal"
+# No mostrar trazas de error (rutas de archivos, código, datos) en el navegador.
+# Los errores completos siguen saliendo en la consola donde corre la app.
+showErrorDetails = "none"
+
+[browser]
+# No enviar estadísticas de uso a Streamlit.
+gatherUsageStats = false
+
+[server]
+# Accesible desde otras PCs de la misma red local (http://IP-DE-ESTA-PC:8501).
+# La app exige la clave de .streamlit/secrets.toml; sin ella se niega a abrirse.
+# Para que solo funcione en esta PC, cambia a "localhost".
+address = "0.0.0.0"
+port = 8501
+enableXsrfProtection = true
+enableCORS = true
+maxUploadSize = 200
+
+[global]
+developmentMode = false

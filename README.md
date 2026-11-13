@@ -85,7 +85,7 @@ En el dashboard (y en `python cli.py resumen`) aparecen los códigos en `missing
 
 ## 5. Bot de la web (Playwright)
 
-1. Edita `web_config.json` con las URLs y los selectores de tu página. Para encontrar los selectores: corre `playwright codegen https://TU-SITIO`, haz clic en los campos y copia lo que genera.
+1. Edita `web_config.json` con las URLs y los selectores de tu página (si no existe, el primer comando lo crea a partir de `web_config.plantilla.json`). Ese archivo **no se sube al repositorio**: la plantilla sí, con datos genéricos. Para encontrar los selectores: corre `playwright codegen https://TU-SITIO`, haz clic en los campos y copia lo que genera.
 2. `python web_bot.py login`: se abre el navegador, **tú** inicias sesión y se guarda la sesión en `datos/sesion.json`. No compartas ese archivo: da acceso a tu cuenta.
 3. `python web_bot.py extraer 1003`: lee la hoja directo de la web. Si un ítem ya tiene medidas en la web, lo marca `completed`.
 4. `python web_bot.py subir 1003 --limite 3`: llena medidas y foto. Tú revisas en el navegador, das Guardar y presionas Enter en la consola.
@@ -97,7 +97,13 @@ Para probarlo con la página simulada: `python web_bot.py extraer 1003 --config 
 
 ## 6. Varias personas
 
-- **Opción A (recomendada):** una PC corre `streamlit run app.py --server.address 0.0.0.0`, y los demás abren `http://IP-DE-ESA-PC:8501` en su navegador. Hay una sola base de datos y no hay conflictos.
+- **Opción A (recomendada):** una PC corre la app y los demás abren `http://IP-DE-ESA-PC:8501` en su navegador. Hay una sola base de datos y no hay conflictos.
+  1. La app ya viene abierta a la red local (`address = "0.0.0.0"` en `.streamlit/config.toml`). Basta con `python -m streamlit run app.py`.
+  2. Cada persona escribe la clave de `.streamlit/secrets.toml` (`clave_acceso = "..."`; también sirve la variable de entorno `INVENTARIO_CLAVE`). Ese archivo no se sube al repositorio. Si no existe, la app se niega a abrirse a la red.
+  3. Tu IP sale en la consola al iniciar la app ("Network URL") o con el comando `ipconfig`.
+  4. La primera vez Windows pregunta si permites el acceso a Python: acepta solo para redes **privadas**.
+  5. Para que solo funcione en esta PC, cambia `address` a `"localhost"` en `.streamlit/config.toml`.
+  - La conexión es `http` (sin cifrar): úsala solo en redes de confianza.
 - **Opción B:** quien prefiera Excel usa **⚙️ Exportar** (sale con desplegable de status, colores y miniaturas), edita ahí y luego lo devuelve con **"Traer status editados en Excel"**.
 - No pongas `inventario.db` en una carpeta compartida de red para que dos personas la abran a la vez. SQLite no se lleva bien con eso.
 - **Respaldo:** copia `datos/` (la base de datos más las fotos).
@@ -114,5 +120,10 @@ Para probarlo con la página simulada: `python web_bot.py extraer 1003 --config 
 | `excel_import.py` | Lee tus Excel y extrae las fotos |
 | `exportar.py` | Excel de salida e importación de status editados |
 | `reportes.py` | Cálculos del dashboard |
-| `web_bot.py`, `web_config.json` | Playwright |
+| `web_bot.py`, `web_config.plantilla.json` | Playwright (tu `web_config.json` real queda solo en tu PC) |
+| `.streamlit/config.toml` | Oculta el botón Deploy y los detalles de errores, desactiva la telemetría y abre la app a la red local (con clave) |
+
+## Privacidad
+
+No se suben al repositorio (ver `.gitignore`): la carpeta `datos/` (base de datos, fotos, `sesion.json`, capturas de error), `web_config.json`, `.streamlit/secrets.toml` ni los Excel que copies a la carpeta (solo los de `ejemplo/`). Antes de hacer `git add`, revisa `git status`.
 | `db.py` | Base de datos SQLite (`datos/inventario.db`; se puede abrir con *DB Browser for SQLite*) |

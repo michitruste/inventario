@@ -5,11 +5,28 @@ __pycache__/
 venv/
 env/
 
-# Datos generados por la app (base de datos y fotos)
+# Datos generados por la app: base de datos, fotos, sesión del navegador y capturas de error
 datos/
+*.db
+*.sqlite
+*.sqlite3
+sesion.json
+
+# Configuración local con datos reales (URLs de la página, claves)
+web_config.json
+.streamlit/secrets.toml
+.env
+
+# Excel / CSV reales que se copien a la carpeta (los de ejemplo sí se versionan)
+*.xlsx
+*.xlsm
+*.xls
+*.csv
+!ejemplo/*.xlsx
+~$*
 
 # Entorno / editores
-.env
 .vscode/
 .idea/
 Thumbs.db
+iniciar_app.bat
