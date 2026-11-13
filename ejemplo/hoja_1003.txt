@@ -1,0 +1,15 @@
+Serial	Description	Cost	Height	Length	Breadth	Weight	Image	Upload
+
+CFQNT	SRV | UVWX-P6LK-001	$723.48						Upload image
+PTJYP	SRV | WXYZ-Q9ZO-010	$2,466.71						Upload image
+								
+HECFE	PWR | NOPQ-B3CY-007	$610.61						Upload image
+AB0DE	EFGH-R4TS-002	$69.68						Upload image
+JKAEP	SRV | WXYZ-Q9ZO-011	$1,355.09						Upload image
+EYSVW	Fuente de poder 500 W	$1,703.45						Upload image
+								
+QXTNN	HVAC | ABCD-K7TR-002	$1,021.49						Upload image
+RWNBG	HVAC | ZZZZ-H5GG-003	$205.68						Upload image
+QFDLV	ABCD-R4TS-001	$169.34						Upload image
+UETDM	HVAC | ABCD-K7TR-001	$1,549.79						Upload image
+								

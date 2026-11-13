@@ -1,0 +1,9 @@
+{
+  "url_login": "{carpeta}/ejemplo/web_simulada/hoja_1003.html",
+  "url_hoja": "{carpeta}/ejemplo/web_simulada/hoja_{hoja}.html",
+  "tabla": {"filas": "table#items tbody tr", "serial": "td.serial", "descripcion": "td.desc", "costo": "td.cost",
+            "height": "input[name=height]", "length": "input[name=length]", "breadth": "input[name=breadth]", "weight": "input[name=weight]"},
+  "subir": {"modo": "fila", "height": "input[name=height]", "length": "input[name=length]", "breadth": "input[name=breadth]",
+            "weight": "input[name=weight]", "imagen": "input[type=file]", "guardar": "button.save", "exito": "span.ok:has-text('Saved')"},
+  "pausa_entre_items_seg": 0, "timeout_seg": 5
+}

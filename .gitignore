@@ -1,0 +1,15 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+env/
+
+# Datos generados por la app (base de datos y fotos)
+datos/
+
+# Entorno / editores
+.env
+.vscode/
+.idea/
+Thumbs.db
